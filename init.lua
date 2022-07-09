@@ -185,7 +185,7 @@ vim.keymap.set('n', '<leader>sd', require('telescope.builtin').diagnostics, { de
 -- See `:help nvim-treesitter`
 require('nvim-treesitter.configs').setup {
   -- Add languages to be installed here that you want installed for treesitter
-  ensure_installed = { 'lua', 'typescript', 'rust', 'go', 'python' },
+  ensure_installed = { 'lua', 'elixir' },
 
   highlight = { enable = true },
   indent = { enable = true },
@@ -296,7 +296,7 @@ end
 local capabilities = require('cmp_nvim_lsp').update_capabilities(vim.lsp.protocol.make_client_capabilities())
 
 -- Enable the following language servers
-local servers = { 'clangd', 'rust_analyzer', 'pyright', 'tsserver', 'sumneko_lua' }
+local servers = { 'elixirls' }
 
 -- Ensure the servers above are installed
 require('nvim-lsp-installer').setup {
@@ -310,31 +310,56 @@ for _, lsp in ipairs(servers) do
   }
 end
 
+local augroup = vim.api.nvim_create_augroup
+local autocmd = vim.api.nvim_create_autocmd
+
+-- Quinn begin 👇
+
+local deft = augroup("deft", { clear = true })
+
+autocmd({ "FileType" }, {
+  group = deft,
+  pattern = {"elixir"},
+  callback = function()
+    file = vim.fs.find({ "mix.exs" }, { upward = true })[1]
+
+    if file then
+      vim.lsp.start({
+        name = "DeftLS",
+        cmd = { "mix", "deft.lsp" },
+        root_dir = vim.fs.dirname(file),
+      })
+    end
+  end,
+})
+
+-- Quinn end 👆
+
 -- Example custom configuration for lua
 --
 -- Make runtime files discoverable to the server
-local runtime_path = vim.split(package.path, ';')
-table.insert(runtime_path, 'lua/?.lua')
-table.insert(runtime_path, 'lua/?/init.lua')
+-- local runtime_path = vim.split(package.path, ';')
+-- table.insert(runtime_path, 'lua/?.lua')
+-- table.insert(runtime_path, 'lua/?/init.lua')
 
-require('lspconfig').sumneko_lua.setup {
-  on_attach = on_attach,
-  capabilities = capabilities,
-  settings = {
-    Lua = {
-      runtime = {
-        -- Tell the language server which version of Lua you're using (most likely LuaJIT)
-        version = 'LuaJIT',
-        -- Setup your lua path
-        path = runtime_path,
-      },
-      diagnostics = {
-        globals = { 'vim' },
-      },
-      workspace = { library = vim.api.nvim_get_runtime_file('', true) },
-    },
-  },
-}
+-- require('lspconfig').sumneko_lua.setup {
+--   on_attach = on_attach,
+--   capabilities = capabilities,
+--   settings = {
+--     Lua = {
+--       runtime = {
+--         -- Tell the language server which version of Lua you're using (most likely LuaJIT)
+--         version = 'LuaJIT',
+--         -- Setup your lua path
+--         path = runtime_path,
+--       },
+--       diagnostics = {
+--         globals = { 'vim' },
+--       },
+--       workspace = { library = vim.api.nvim_get_runtime_file('', true) },
+--     },
+--   },
+-- }
 
 -- nvim-cmp setup
 local cmp = require 'cmp'
